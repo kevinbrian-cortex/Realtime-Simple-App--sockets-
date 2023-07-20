@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    #map {
+      /* height: 500px; */
+      /* width: 500px; */
+      /* background-color: rgb(14, 89, 136); */
+    }
+  </style>
+  <body>
+    <h3>Webscokets</h3>
+
+    <form>
+      <input type="text" id="message" />
+    </form>
+    <button id="btn">Send Message</button>
+
+    <ul id="chatWrapper"></ul>
+
+    <canvas
+      id="map"
+      width="600"
+      height="400"
+      style="border: 1px solid rgb(0, 0, 0)"
+    ></canvas>
+  </body>
+
+  <script>
+    console.log("Hello World this is client");
+
+    const message = document.getElementById("message");
+    const chatWrapper = document.getElementById("chatWrapper");
+    const map = document.getElementById("map");
+    const ctx = map.getContext("2d");
+    let isDrawing = false;
+
+    const socket = new WebSocket("ws://localhost:3000");
+
+    const button = document.getElementById("btn");
+
+    button.addEventListener("click", () => {
+      console.log("Clicked button");
+      sendMessage();
+    });
+
+    //listen for drawinf chages
+    map.addEventListener("mousedown", (event) => {
+      isDrawing = true;
+      draw(event.clientX, event.clientY);
+    });
+
+    //at this point the user is drawing
+    map.addEventListener("mousemove", (event) => {
+      if (isDrawing) {
+        const data = { x: event.clientX, y: event.clientY };
+        // draw(event.clientX, event.clientY);
+        socket.send(JSON.stringify({ x: event.clientX, y: event.clientY }));
+      }
+    });
+
+    //close drawinf
+    map.addEventListener("mouseup", () => {
+      isDrawing = false;
+    });
+
+    //listen for open event
+    socket.addEventListener("open", () => {
+      console.log("connection is open now");
+    });
+
+    //listen for message event
+    socket.addEventListener("message", (event) => {
+      console.log("We got a message", event.data);
+
+      const { x, y } = JSON.parse(event.data);
+
+      //   const message = event.data;
+
+      //   const li = document.createElement("li");
+      //   li.innerHTML = message;
+      //   chatWrapper.appendChild(li);
+
+      //   console.log(event);
+
+      draw(x, y);
+    });
+
+    //listen for close event
+    socket.addEventListener("close", () => {
+      console.log("Connection is closed :(");
+    });
+
+    //send message function
+    function sendMessage() {
+      socket.send(message.value);
+
+      console.log("====>", message.value);
+    }
+
+    //draw funciton
+    function draw(x, y) {
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "black";
+      ctx.fill();
+      ctx.closePath();
+    }
+  </script>
+</html>
